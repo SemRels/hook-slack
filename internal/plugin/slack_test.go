@@ -1,7 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2026 The semrel Authors
-
-package plugin_test
+package plugin
 
 import (
 	"context"
@@ -11,112 +8,77 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	notify "github.com/SemRels/hook-slack/internal/plugin"
 )
 
-func TestSlackNotifier_Notify_Success(t *testing.T) {
-	var received []byte
+func TestSlackNotifierNotifySuccess(t *testing.T) {
+	t.Parallel()
+
+	var payload slackPayload
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		received, _ = io.ReadAll(r.Body)
+		defer r.Body.Close()
 		if r.Header.Get("Content-Type") != "application/json" {
-			t.Errorf("expected JSON content type")
+			t.Fatalf("unexpected content type: %s", r.Header.Get("Content-Type"))
+		}
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			t.Fatalf("decode payload: %v", err)
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
 	}))
 	defer srv.Close()
 
-	n := notify.NewSlackNotifier(notify.SlackConfig{
-		WebhookURL: srv.URL,
-		Channel:    "#releases",
-		Username:   "bot",
-		IconEmoji:  ":tada:",
-	})
-
-	ctx := context.Background()
-	if err := n.Notify(ctx, "v1.2.3", "### Added\n- new feature", "myapp"); err != nil {
+	n := NewSlackNotifier(SlackConfig{WebhookURL: srv.URL, Channel: "#releases", Username: "bot", IconEmoji: ":tada:"})
+	if err := n.Notify(context.Background(), "v1.2.3", "- feature", "myapp"); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Verify payload structure
-	var payload map[string]any
-	if err := json.Unmarshal(received, &payload); err != nil {
-		t.Fatalf("invalid JSON: %v", err)
+	if payload.Username != "bot" || payload.IconEmoji != ":tada:" || payload.Channel != "#releases" {
+		t.Fatalf("unexpected payload: %+v", payload)
 	}
-	if payload["username"] != "bot" {
-		t.Errorf("expected username 'bot', got %v", payload["username"])
-	}
-	if payload["icon_emoji"] != ":tada:" {
-		t.Errorf("expected icon_emoji ':tada:', got %v", payload["icon_emoji"])
+	if len(payload.Blocks) != 3 {
+		t.Fatalf("expected 3 blocks, got %d", len(payload.Blocks))
 	}
 }
 
-func TestSlackNotifier_Notify_Error(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-	}))
-	defer srv.Close()
+func TestSlackNotifierNotifyRequiresWebhook(t *testing.T) {
+	t.Parallel()
 
-	n := notify.NewSlackNotifier(notify.SlackConfig{WebhookURL: srv.URL})
-	if err := n.Notify(context.Background(), "v1.0.0", "", "repo"); err == nil {
-		t.Fatal("expected error for non-200 response")
+	err := NewSlackNotifier(SlackConfig{}).Notify(context.Background(), "v1.0.0", "", "")
+	if err == nil || !strings.Contains(err.Error(), "webhook URL") {
+		t.Fatalf("expected webhook error, got %v", err)
 	}
 }
 
-func TestSlackNotifier_Notify_TruncatesLongNotes(t *testing.T) {
-	var received []byte
+func TestSlackNotifierNotifyHTTPError(t *testing.T) {
+	t.Parallel()
+
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		received, _ = io.ReadAll(r.Body)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
+		w.WriteHeader(http.StatusBadGateway)
+		_, _ = io.WriteString(w, "bad gateway")
 	}))
 	defer srv.Close()
 
-	n := notify.NewSlackNotifier(notify.SlackConfig{WebhookURL: srv.URL})
-	longNotes := strings.Repeat("x", 2000)
-	if err := n.Notify(context.Background(), "v1.0.0", longNotes, "repo"); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	// Payload shouldn't be enormous
-	if len(received) > 2500 {
-		t.Errorf("expected truncated payload, got %d bytes", len(received))
+	err := NewSlackNotifier(SlackConfig{WebhookURL: srv.URL}).Notify(context.Background(), "v1.0.0", "", "repo")
+	if err == nil || !strings.Contains(err.Error(), "unexpected status") {
+		t.Fatalf("expected status error, got %v", err)
 	}
 }
 
-func TestSlackNotifier_Defaults(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var payload map[string]any
-		json.NewDecoder(r.Body).Decode(&payload)
-		if payload["username"] != "semrel" {
-			t.Errorf("expected default username 'semrel', got %v", payload["username"])
-		}
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
-	}))
-	defer srv.Close()
+func TestSlackNotifierDefaultsAndBuildBlocks(t *testing.T) {
+	t.Parallel()
 
-	n := notify.NewSlackNotifier(notify.SlackConfig{WebhookURL: srv.URL})
-	n.Notify(context.Background(), "v1.0.0", "", "")
-}
-
-func TestSlackNotifier_BlocksContainVersion(t *testing.T) {
-	var received []byte
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		received, _ = io.ReadAll(r.Body)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
-	}))
-	defer srv.Close()
-
-	n := notify.NewSlackNotifier(notify.SlackConfig{WebhookURL: srv.URL})
-	n.Notify(context.Background(), "v2.3.4", "release notes here", "myproject")
-
-	if !strings.Contains(string(received), "v2.3.4") {
-		t.Error("expected version in Slack payload")
+	n := NewSlackNotifier(SlackConfig{WebhookURL: "https://hooks.slack.test"})
+	if n.cfg.Username != "semrel" || n.cfg.IconEmoji != ":rocket:" {
+		t.Fatalf("unexpected defaults: %+v", n.cfg)
 	}
-	if !strings.Contains(string(received), "myproject") {
-		t.Error("expected repository name in Slack payload")
+
+	blocks := n.buildBlocks("v1.0.0", strings.Repeat("x", 1000), "")
+	if len(blocks) != 3 {
+		t.Fatalf("expected 3 blocks, got %d", len(blocks))
+	}
+	if !strings.Contains(blocks[0].Text.Text, "v1.0.0") {
+		t.Fatalf("expected version in header: %+v", blocks[0])
+	}
+	if !strings.HasSuffix(blocks[1].Text.Text, "...") {
+		t.Fatalf("expected truncated changelog, got %q", blocks[1].Text.Text)
 	}
 }
