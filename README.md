@@ -1,46 +1,51 @@
 # hook-slack
 
-Slack notification hook plugin for SemRel.
+Posts a release announcement to Slack using an incoming webhook.
 
-Publishes release notifications and status updates to Slack channels after SemRel runs.
+This plugin is distributed as the standalone Go binary `semrel-plugin-hook-slack`. Semrel executes the binary as a subprocess, provides plugin configuration through `SEMREL_PLUGIN_*` environment variables, provides release context through `SEMREL_*` environment variables, reads standard output, and treats exit code `0` as success and any non-zero exit code as failure. Install the binary in `~/.semrel/plugins/` or anywhere on your `$PATH`.
 
-## Documentation
+## Installation
 
-- SemRel docs (planned): <https://github.com/SemRels/semrel/tree/main/docs/plugins/hook-slack>
-- Plugin template: <https://github.com/SemRels/plugin-template>
-- Registry: <https://registry.semrel.io>
+```bash
+go install github.com/SemRels/hook-slack/cmd/plugin@latest
+```
 
-## Repository Layout
+## Configuration
 
-~~~text
-cmd/plugin/              Plugin entry point
-internal/plugin/         Business logic scaffold
-internal/grpc/           gRPC transport scaffold
-proto/v1                 Symlink to the SemRel protobuf contract
-.github/workflows/       CI, release, and security automation
-~~~
-
-## Development
-
-~~~bash
-go build ./cmd/plugin
-go test ./...
-~~~
-
-## Configuration Example
-
-~~~yaml
+```yaml
 plugins:
   - name: hook-slack
-    type: hook
-    config:
-      webhook_url: ${SLACK_WEBHOOK_URL}
-      channel: '#releases'
-      notify_on:
-        - success
-        - failure
-~~~
+    path: ~/.semrel/plugins/semrel-plugin-hook-slack
+    env:
+      SEMREL_PLUGIN_WEBHOOK_URL: "https://hooks.slack.com/services/xxx/yyy/zzz"
+      SEMREL_PLUGIN_CHANNEL: "#releases"
+      SEMREL_PLUGIN_USERNAME: "semrel"
+      SEMREL_PLUGIN_ICON_EMOJI: ":rocket:"
+```
 
-## Status
+## `SEMREL_PLUGIN_*` variables
 
-This repository is bootstrapped from SemRels/plugin-template and is ready for implementation.
+| Name | Required | Description | Default |
+| --- | --- | --- | --- |
+| `SEMREL_PLUGIN_WEBHOOK_URL` | Required | Slack incoming webhook URL. | None |
+| `SEMREL_PLUGIN_CHANNEL` | Optional | Slack channel override for the message. | Webhook default |
+| `SEMREL_PLUGIN_USERNAME` | Optional | Display name for the webhook sender. | semrel |
+| `SEMREL_PLUGIN_ICON_EMOJI` | Optional | Emoji icon for the webhook sender. | :rocket: |
+
+## `SEMREL_*` release context used
+
+| Variable | Description |
+| --- | --- |
+| `SEMREL_VERSION` | Resolved release version for the current run. |
+| `SEMREL_TAG_NAME` | Git tag name semrel will create or publish. |
+| `SEMREL_NEXT_VERSION` | Next version computed by semrel for the release. |
+| `SEMREL_CHANGELOG` | Generated changelog text for the release. |
+| `SEMREL_DRY_RUN` | Whether semrel is running in dry-run mode. |
+
+## Example behavior
+
+The plugin sends a formatted Slack message with the release tag and changelog summary. In dry-run mode it prints the payload instead of calling the webhook.
+
+## License
+
+Apache-2.0
