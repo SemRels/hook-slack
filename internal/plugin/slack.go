@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type SlackConfig struct {
@@ -17,6 +18,8 @@ type SlackConfig struct {
 	Channel    string
 	Username   string
 	IconEmoji  string
+	MaxRetries int
+	RetryDelay time.Duration
 }
 
 type SlackNotifier struct {
@@ -30,6 +33,12 @@ func NewSlackNotifier(cfg SlackConfig) *SlackNotifier {
 	}
 	if cfg.IconEmoji == "" {
 		cfg.IconEmoji = ":rocket:"
+	}
+	if cfg.MaxRetries == 0 {
+		cfg.MaxRetries = DefaultMaxRetries
+	}
+	if cfg.RetryDelay == 0 {
+		cfg.RetryDelay = DefaultRetryDelay
 	}
 	return &SlackNotifier{
 		cfg:    cfg,
@@ -71,13 +80,14 @@ func (n *SlackNotifier) Notify(ctx context.Context, version, changelog, reposito
 		return fmt.Errorf("slack: marshal payload: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, n.cfg.WebhookURL, bytes.NewReader(b))
-	if err != nil {
-		return fmt.Errorf("slack: create request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := n.client.Do(req)
+	resp, err := retryDo(ctx, n.cfg.MaxRetries, n.cfg.RetryDelay, func() (*http.Response, error) {
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, n.cfg.WebhookURL, bytes.NewReader(b))
+		if err != nil {
+			return nil, fmt.Errorf("slack: create request: %w", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		return n.client.Do(req)
+	})
 	if err != nil {
 		return fmt.Errorf("slack: send notification: %w", err)
 	}

@@ -21,6 +21,8 @@ plugins:
       SEMREL_PLUGIN_CHANNEL: "#releases"
       SEMREL_PLUGIN_USERNAME: "semrel"
       SEMREL_PLUGIN_ICON_EMOJI: ":rocket:"
+      SEMREL_PLUGIN_MAX_RETRIES: "3"
+      SEMREL_PLUGIN_RETRY_DELAY: "2s"
 ```
 
 ## `SEMREL_PLUGIN_*` variables
@@ -29,8 +31,14 @@ plugins:
 | --- | --- | --- | --- |
 | `SEMREL_PLUGIN_WEBHOOK_URL` | Required | Slack incoming webhook URL. | None |
 | `SEMREL_PLUGIN_CHANNEL` | Optional | Slack channel override for the message. | Webhook default |
-| `SEMREL_PLUGIN_USERNAME` | Optional | Display name for the webhook sender. | semrel |
-| `SEMREL_PLUGIN_ICON_EMOJI` | Optional | Emoji icon for the webhook sender. | :rocket: |
+| `SEMREL_PLUGIN_USERNAME` | Optional | Display name for the webhook sender. | `semrel` |
+| `SEMREL_PLUGIN_ICON_EMOJI` | Optional | Emoji icon for the webhook sender. | `:rocket:` |
+| `SEMREL_PLUGIN_MAX_RETRIES` | Optional | Retries on transient network failures and HTTP 5xx responses. | `3` |
+| `SEMREL_PLUGIN_RETRY_DELAY` | Optional | Delay between retry attempts. | `2s` |
+
+## Retry behavior
+
+The plugin retries transient failures caused by network errors or HTTP `5xx` responses. HTTP `2xx` and `4xx` responses are not retried. Each retry attempt is logged to standard error.
 
 ## `SEMREL_*` release context used
 
