@@ -25,7 +25,7 @@ var newNotifier = func(cfg plugin.SlackConfig) notifier {
 }
 
 func run(ctx context.Context, getenv func(string) string, stderr io.Writer) int {
-	fmt.Fprintf(stderr, "plugin_schema_version=%d\n", pluginSchemaVersion)
+	_, _ = fmt.Fprintf(stderr, "plugin_schema_version=%d\n", pluginSchemaVersion)
 	webhookURL := getenv("SEMREL_PLUGIN_WEBHOOK_URL")
 	if webhookURL == "" {
 		fmt.Fprintln(stderr, "hook-slack: SEMREL_PLUGIN_WEBHOOK_URL is required")
