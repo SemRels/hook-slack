@@ -1,6 +1,6 @@
 # hook-slack
 
-[![Latest Release](https://img.shields.io/github/v/release/SemRels/hook-slack?label=version\&color=blue)](https://github.com/SemRels/hook-slack/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/SemRels/hook-slack?label=version&color=blue)](https://github.com/SemRels/hook-slack/releases/latest)
 
 Posts a release announcement to Slack using an incoming webhook.
 
