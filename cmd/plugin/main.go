@@ -28,12 +28,12 @@ func run(ctx context.Context, getenv func(string) string, stderr io.Writer) int 
 	_, _ = fmt.Fprintf(stderr, "plugin_schema_version=%d\n", pluginSchemaVersion)
 	webhookURL := getenv("SEMREL_PLUGIN_WEBHOOK_URL")
 	if webhookURL == "" {
-		fmt.Fprintln(stderr, "hook-slack: SEMREL_PLUGIN_WEBHOOK_URL is required")
+		_, _ = fmt.Fprintln(stderr, "hook-slack: SEMREL_PLUGIN_WEBHOOK_URL is required")
 		return 1
 	}
 	version := firstNonEmpty(getenv("SEMREL_VERSION"), getenv("SEMREL_TAG_NAME"), getenv("SEMREL_NEXT_VERSION"))
 	if version == "" {
-		fmt.Fprintln(stderr, "hook-slack: SEMREL_VERSION, SEMREL_TAG_NAME, or SEMREL_NEXT_VERSION is required")
+		_, _ = fmt.Fprintln(stderr, "hook-slack: SEMREL_VERSION, SEMREL_TAG_NAME, or SEMREL_NEXT_VERSION is required")
 		return 1
 	}
 	if getenv("SEMREL_DRY_RUN") == "true" {
@@ -42,12 +42,12 @@ func run(ctx context.Context, getenv func(string) string, stderr io.Writer) int 
 
 	maxRetries, err := parseMaxRetries(getenv("SEMREL_PLUGIN_MAX_RETRIES"))
 	if err != nil {
-		fmt.Fprintln(stderr, "hook-slack:", err)
+		_, _ = fmt.Fprintln(stderr, "hook-slack:", err)
 		return 1
 	}
 	retryDelay, err := parseRetryDelay(getenv("SEMREL_PLUGIN_RETRY_DELAY"))
 	if err != nil {
-		fmt.Fprintln(stderr, "hook-slack:", err)
+		_, _ = fmt.Fprintln(stderr, "hook-slack:", err)
 		return 1
 	}
 
@@ -61,7 +61,7 @@ func run(ctx context.Context, getenv func(string) string, stderr io.Writer) int 
 	}
 
 	if err := newNotifier(cfg).Notify(ctx, version, getenv("SEMREL_CHANGELOG"), getenv("SEMREL_PLUGIN_REPOSITORY")); err != nil {
-		fmt.Fprintln(stderr, "hook-slack:", err)
+		_, _ = fmt.Fprintln(stderr, "hook-slack:", err)
 		return 1
 	}
 	return 0
