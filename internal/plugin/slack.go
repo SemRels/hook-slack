@@ -91,7 +91,9 @@ func (n *SlackNotifier) Notify(ctx context.Context, version, changelog, reposito
 	if err != nil {
 		return fmt.Errorf("slack: send notification: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("slack: unexpected status %d", resp.StatusCode)
