@@ -28,7 +28,11 @@ func TestSlackNotifierNotifySuccess(t *testing.T) {
 
 	var payload slackPayload
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
+		t.Cleanup(func() {
+			if err := r.Body.Close(); err != nil {
+				t.Errorf("close request body: %v", err)
+			}
+		})
 		if r.Header.Get("Content-Type") != "application/json" {
 			t.Fatalf("unexpected content type: %s", r.Header.Get("Content-Type"))
 		}
