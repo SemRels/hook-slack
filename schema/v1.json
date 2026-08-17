@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://registry.semrel.io/schemas/plugins/hook-slack/v1.json",
+  "$id": "https://registry.semrel.io/schemas/plugins/slack/v1.json",
   "title": "hook-slack plugin configuration",
   "description": "Schema v1 for the hook-slack semrel plugin. Configure via SEMREL_* environment variables.",
   "type": "object",
