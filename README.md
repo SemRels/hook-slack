@@ -26,7 +26,7 @@ Images are signed with [cosign](https://github.com/sigstore/cosign) and include 
 
 ```bash
 cosign verify ghcr.io/semrels/hook-slack:latest \
-  --certificate-identity-regexp 'https://github.com/SemRels/hook-slack/.github/workflows/release.yml.*' \
+  --certificate-identity-regexp 'https://github.com/SemRels/hook-slack/.github/workflows/container.yml.*' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
