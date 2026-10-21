@@ -1,6 +1,6 @@
 # Code of Conduct
 
-hook-slack is committed to providing a welcoming and harassment-free community.
+`hook-slack` is committed to providing a welcoming and harassment-free community.
 
 ## Our Pledge
 
