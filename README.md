@@ -1,6 +1,10 @@
 # hook-slack
 
 [![Latest Release](https://img.shields.io/github/v/release/SemRels/hook-slack?label=version&color=blue)](https://github.com/SemRels/hook-slack/releases/latest)
+[![CI](https://github.com/SemRels/hook-slack/actions/workflows/ci.yml/badge.svg)](https://github.com/SemRels/hook-slack/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/SemRels/hook-slack)](LICENSE)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/SemRels/hook-slack/badge)](https://scorecard.dev/viewer/?uri=github.com/SemRels/hook-slack)
+[![REUSE status](https://api.reuse.software/badge/github.com/SemRels/hook-slack)](https://api.reuse.software/info/github.com/SemRels/hook-slack)
 
 Posts a release announcement to Slack using an incoming webhook.
 
