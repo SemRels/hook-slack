@@ -39,27 +39,29 @@ cosign verify ghcr.io/semrels/hook-slack:latest \
 
 ```yaml
 plugins:
-  - name: hook-slack
-    path: ~/.semrel/plugins/semrel-plugin-hook-slack
-    env:
-      SEMREL_PLUGIN_WEBHOOK_URL: "https://hooks.slack.com/services/xxx/yyy/zzz"
-      SEMREL_PLUGIN_CHANNEL: "#releases"
-      SEMREL_PLUGIN_USERNAME: "semrel"
-      SEMREL_PLUGIN_ICON_EMOJI: ":rocket:"
-      SEMREL_PLUGIN_MAX_RETRIES: "3"
-      SEMREL_PLUGIN_RETRY_DELAY: "2s"
+  - uses: "@semrel/hook-slack"
+    phase: release
+    args:
+      webhook_url: "https://hooks.slack.com/services/xxx/yyy/zzz"
+      channel: "#releases"
+      username: "semrel"
+      icon_emoji: ":rocket:"
+      max_retries: "3"
+      retry_delay: "2s"
 ```
 
-## `SEMREL_PLUGIN_*` variables
+## Options
 
-| Name | Required | Description | Default |
-| --- | --- | --- | --- |
-| `SEMREL_PLUGIN_WEBHOOK_URL` | Required | Slack incoming webhook URL. | None |
-| `SEMREL_PLUGIN_CHANNEL` | Optional | Slack channel override for the message. | Webhook default |
-| `SEMREL_PLUGIN_USERNAME` | Optional | Display name for the webhook sender. | `semrel` |
-| `SEMREL_PLUGIN_ICON_EMOJI` | Optional | Emoji icon for the webhook sender. | `:rocket:` |
-| `SEMREL_PLUGIN_MAX_RETRIES` | Optional | Retries on transient network failures and HTTP 5xx responses. | `3` |
-| `SEMREL_PLUGIN_RETRY_DELAY` | Optional | Delay between retry attempts. | `2s` |
+Every option can be set as an entry under `args` in `.semrel.yaml`. semrel passes each entry to the plugin as the environment variable shown in the table, so you can also set that variable directly (for example in your CI environment) instead of using `args`.
+
+| Argument | Environment variable | Required | Description | Default |
+| --- | --- | --- | --- | --- |
+| `webhook_url` | `SEMREL_PLUGIN_WEBHOOK_URL` | Required | Slack incoming webhook URL. | None |
+| `channel` | `SEMREL_PLUGIN_CHANNEL` | Optional | Slack channel override for the message. | Webhook default |
+| `username` | `SEMREL_PLUGIN_USERNAME` | Optional | Display name for the webhook sender. | `semrel` |
+| `icon_emoji` | `SEMREL_PLUGIN_ICON_EMOJI` | Optional | Emoji icon for the webhook sender. | `:rocket:` |
+| `max_retries` | `SEMREL_PLUGIN_MAX_RETRIES` | Optional | Retries on transient network failures and HTTP 5xx responses. | `3` |
+| `retry_delay` | `SEMREL_PLUGIN_RETRY_DELAY` | Optional | Delay between retry attempts. | `2s` |
 
 ## Retry behavior
 
